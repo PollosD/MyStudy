@@ -1,0 +1,39 @@
+1.系统配置
+ubuntu18.04 Server系统版本安装
+安装完成后配置IP地址为固定IP  开启ssh 
+关闭防火墙 ufw disable
+修改系统时区东八区  同步时间
+运行tzselect，选择对应地区时间
+复制文件到目录下
+cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+2.开始安装confluence
+  2.1安装jre
+  apt install -y default-jre
+    2.2安装配置数据库
+  apt install -y mysql-server
+  连接MySQL
+  mysql
+  > create database confluence character set utf8mb4 collate utf8mb4_bin;
+  > grant all privileges on confluence.* to 'confluence'@'localhost'      identified by 'confluence';
+  > flush privileges;
+  修改mysql事务隔离级别为Read_committed，配置文件地址为/etc/mysql/mysql.conf.d
+  修改MySQL默认字符串为utf-8
+	
+  
+        修改confluence要求的MySQL配置
+   max_allowed_packet to 512M
+   innodb_log_file_size to 2GB 
+ 2.3安装confluence
+   下载安装包 wget https://downloads.atlassian.com/software/confluence/downloads/atlassian-confluence-7.4.0-x64.bin
+   可执行权限
+    chmod +x atlassian-confluence-7.4.0-x64.bin
+   开始安装
+    ./atlassian-confluence-7.4.0-x64.bin
+ 2.4安装MySQL连接器
+   wget https://cdn.mysql.com//Downloads/Connector-J/mysql-connector-java-5.1.49.tar.gz
+   解压驱动包
+   tar -zxvf mysql-connector-java-5.1.49.tar.gz
+   驱动文件移动到confluence指定目录
+   mv mysql-connector-java-5.1.49/mysql-connector-java-5.1.49-bin.jar  /opt/atlassian/confluence/confluence/WEB-INF/lib/
+2.5破解  不多写
+2.6安装位置 /opt

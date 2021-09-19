@@ -1,0 +1,51 @@
+1.系统配置
+ubuntu18.04 Server系统版本安装
+安装完成后配置IP地址为固定IP  开启ssh 
+关闭防火墙 ufw disable
+修改系统时区东八区  同步时间
+运行tzselect，选择对应地区时间
+复制文件到目录下
+cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+2.安装mysql
+  apt install -y mysql-server
+  创建jira数据库和用户
+  mysql
+  > create database confluence character set utf8mb4 collate utf8mb4_bin;
+  > grant all privileges on confluence.* to 'jira'@'localhost' identified by 'jira';
+  > flush privileges;
+ 修改数据库相关配置
+  vim /etc/mysql/mysql.conf.d   在[mysqld]新增如下配置
+  [mysqld] ... 
+  default-storage-engine=INNODB 
+  character_set_server=utf8mb4 
+  innodb_default_row_format=DYNAMIC 
+  innodb_file_format=Barracuda 
+  innodb_log_file_size=2G 
+  sql_mode=ONLY_FULL_GROUP_BY,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION
+  接着修改  max_allowed_packet	= 512M
+  数据库的配置就此完成
+3.安装jira
+  去官网下载指定版本的安装包  https://product-downloads.atlassian.com/software/jira/downloads/atlassian-jira-software-8.6.0-x64.bin
+    或者cd /opt 下 
+    wget https://product-downloads.atlassian.com/software/jira/downloads/atlassian-jira-software-8.6.0-x64.bin
+  为安装包赋权 
+    chmod +x atlassian-jira-software-8.6.0-x64.bin
+  执行安装
+    ./atlassian-jira-software-8.6.0-x64.bin
+  安装完成后暂时不启动，下载mysql连接器
+    wget https://cdn.mysql.com//Downloads/Connector-J/mysql-connector-java-5.1.49.tar.gz
+  解压驱动包
+    tar -zxvf mysql-connector-java-5.1.49.tar.gz
+  驱动文件移动到jira指定目录
+    mv mysql-connector-java-5.1.49/mysql-connector-java-5.1.49-bin.jar /opt/atlassian/jira/atlassian-jira/WEB-INF/lib
+	
+  将上面的jar包替换掉指定目录原有的同名jar包
+    cd /opt/atlassian/jira/atlassian-jira/WEB-INF/lib
+    mv atlassian-extras-3.2.jar /
+    cp *.jar /opt/atlassian/jira/atlassian-jira/WEB-INF/lib
+  修改默认启动端口8080 为80
+    vim /opt/atlassian/jira/conf/server.xml  将配置文件里面的8080全部改为80
+  启动jira
+    cd /opt/atlassian/jira/bin
+    ./startup.sh
+  接下来按照说明配置数据库  用户名：jira  密码：jira  端口：3306  主机：localhost

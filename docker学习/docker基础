@@ -1,0 +1,156 @@
+docker基于Go语言
+
+配合Golang   Swarm/Compose/Machine/mesos/k8s/CICD等
+
+一次封装 到处运行
+
+docker解决运行环境和配置问题软件容器，方便做持续集成有助于整体发布的容器化虚拟技术
+
+虚拟机缺点：资源占用多 冗余步骤多 启动慢
+
+docker和传统虚拟机不同
+1.传统的虚拟出一整套硬件，运行一个完整的操作系统，系统上运行进程。
+2.容器内进程应用于宿主内核，容器并没有内核，也没有硬件虚拟，更为轻便
+3.容器互相隔离，独立文件系统
+
+Devops:一次构建随处运行
+
+docker三大特征：镜像 容器  仓库
+
+镜像image：只读模板，可以用来创建docker容器。一个镜像可以创建很多容器。
+
+容器container：镜像创建的运行实例，利用容器独立运行的一个或一组应用，可以被启动 开始停止 删除 每个相互隔离，保证安全  容器最上面一层可读写
+
+仓库repository：存放镜像文件
+仓库注册服务器registry:存放多个仓库，每个仓库包含多个镜像，每个镜像有不同的tag
+分公开仓和私有仓
+
+
+
+常用命令
+镜像命令：
+docker images 列出本地镜像 仓库源 标签 ID 创建时间 大小
+
+-a:列出本地所有的镜像（含中间镜像层）
+-q:显示镜像ID
+-aq:列出所有的镜像ID
+--digests:显示镜像的摘要信息
+--no-trunc：显示完整的镜像信息
+
+docker search 查找镜像  从docker官方仓库查找
+-f <过滤条件>:列出收藏数不小于指定数的镜像
+
+
+docker pull 下载镜像 默认拉取最新镜像
+
+docker rmi 删除镜像 默认删除最新镜像
+-f:强制删除
+-f 镜像ID:标签 ：删除多个
+-f $(docker images -qa):删除全部镜像
+
+
+容器命令
+docker run 新建并启动容器
+--name="新名字"：指定名称
+-d:后台运行，并返回ID,启动守护式容器
+-it:交互模式
+-P:随机端口映射
+-p:指定端口映射
+
+docker ps:查看正在运行的容器
+-a;列出当前所有正在运行的容器和历史运行容器
+-l:显示最近创建的容器
+-n:显示最近N个创建的容器
+-q:静默模式，只显示容器编号
+--no-trunc：不截断输出
+
+退出容器：  exit 退出并停止
+            ctrl+p+q:退出不停止
+
+启动容器 docker start 容器ID或者名字
+停止容器 docker stop ID或名字
+强制停止 docker kill
+删除已停止容器 docker rm 容器ID
+删除多个 docker rm -f $(docker ps -aq)                    
+
+启动守护式容器 docker run -d 
+
+
+查看容器日志 docker logs -f(不间断） -t(时间戳） --tail 参数 容器ID
+查看容器内运行进程 docker top
+查看容器内部细节 docker inspect                         
+进入正在运行的容器并以命令行交互 docker exec -it 容器内打开新终端 可以启动新的进程  功能强大                         
+                                 docker attach 直接进入容器启动命令终端 不会启动新进程
+
+
+
+容器内拷贝文件到主机 docker cp 容器ID:容器内路径 主机路径
+
+
+docker镜像 轻量级可执行的独立软件包。用来打包软件运行环境和基于运行环境开发的软件，包含运行某个软件所需的所有内容，代码、库、环境变量和配置文件
+联合文件系统 UnionFS ：对文件系统的修改作为一次提交来一层层叠加
+docker镜像加载原理
+
+
+镜像分层原理  联合文件系统  可以共享资源   docker history 镜像名
+
+
+docker镜像只读 容器启动时，一个新的可写层被加载到镜像顶部，这层为容器层 之下     就是镜像层
+
+
+docker commit命令  自定义镜像
+docker commit -m="提交的描述信息" -a="作者" 容器ID 要创建的目标镜像名:[标签名]
+
+
+容器数据卷 做数据共享和持久化
+容器内添加数据卷  命令添加 
+docker run -it -v /宿主机绝对路径目录:/容器内目录 镜像名
+带权限 docker run -it -v /宿主机绝对路径目录:/容器内目录:ro 镜像名   read only
+
+dockerfile
+docker build -f 路径 -t 命名:tag .   有个点
+docker file示例   
+#Volume test
+FROM centos
+VOLUME ["/dataVolumeContainer1","/dataVolumeContainer2"]
+CMD echo "finished,----success"
+CMD /bin/bash
+等价于 docker run -it -v /host1:/dataVolumeContainer -v /host2:/dataVolumeContainer centos /bin/bash 
+
+数据卷容器间传递传递共享
+继承容器  docker run -it --name 新容器名 --volumes-from 需要继承的容器名 镜像名
+各个容器间互相继承且同步
+
+
+Dockerfile学习
+用来构建docker镜像的构建文件，是由一系列命令和参数构成的脚本
+1.编写dockerfile文件
+2.docker build命令执行，获得自定义镜像
+3.docker run 运行
+
+dockerfile解析 1.每条保留字指令都必须为大写字母且后面要跟随至少一个参数
+               2.指令按照从上到下，顺序执行
+               3.#表示注释
+               4.每条指令都会创建一个新的镜像层，并对镜像进行提交
+
+执行dockerfile的流程 1.docker从基础镜像运行一个容器
+                     2.执行一条指令并对容器做出修改
+                     3.执行类似docker commit的操作提交一个新镜像层
+                     4.docker基于刚提交的镜像运行一个新容器
+                     5.执行dockerfile中的下一条指令直到所有都执行完成
+
+ 
+
+保留关键字
+FROM:基础镜像
+MAINTAINER:镜像维护者的名字及邮箱
+RUN:容器构建时需要运行的命令
+EXPOSE:当前容器对外暴露出的端口  
+WORKDIR:指定在创建容器后，终端默认登陆的工作目录
+ENV:构建镜像过程中设置环境变量
+ADD：将宿主机目录下的文件拷贝进镜像且自动处理URL和解压tar压缩包
+COPY:类似ADD,拷贝文件和目录到镜像中，将从构建上下文目录中<原路径>的文件或目录复制到新的一层镜像<目标路径>位置
+VOLUME:容器数据卷，用于数据保存和持久化工作
+CMD:指定容器启动时要运行的命令，可以有多个cmd命令，但只有最后一个生效，cmd会被docker run之后的参数替换
+ENTRYPOINT:指定容器启动时要运行的命令，和CMD一样 但是命令会被追加 不会替换掉
+ONBUILD:构建一个被继承的dockerfile时运行命令，父镜像在被子镜像继承后触发ONBUILD

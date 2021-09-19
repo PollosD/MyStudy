@@ -1,0 +1,68 @@
+准备环境  三台centos7主机   k8s-master01 k8s-node01 k8s-node02 内存2G以上 CPU2核以上   IP地址
+通过kubeadm安装工具安装
+1.更改主机名
+ 进入vim /etc/hosts 新增
+ IP地址 k8s-master01
+ IP地址 k8s-node01
+ IP地址 k8s-node02
+2.拷贝修改好的文件至其余主机
+  scp /etc/hosts k8s-node01:/etc/
+  scp /etc/hosts k8s-node02:/etc/
+3.校对mac地址和product_uuid 的唯一性
+  sudo cat /sys/class/dmi/id/product_uuid
+4.允许iptables检查桥接流量
+  vim /etc/sysctl.conf  添加
+  net.bridge.bridge-nf-call-ip6tables = 1
+  net.bridge.bridge-nf-call-iptables = 1
+  拷贝到其余两台主机
+  scp /etc/sysctl.conf k8snode01:/etc
+  scp /etc/sysctl.conf k8snode02:/etc
+    sysctl -p  三台主机进行生效操作  如果报错提示没有该文件 参考网页
+5.全部关闭防火墙
+  systemctl stop firewalld.service 
+  systemctl disable firewalld.service
+6.关闭swap分区
+  进入vim /etc/fstab 注释掉
+  # /dev/mapper/centos-swap swap 
+  关闭  swapoff -a
+  进入vim /etc/sysctl.conf 添加
+  vm.swappiness = 0
+   sysctl -p 生效
+7.关闭selinux
+  vim /etc/selinux/config 修改
+  SELINUX=disabled
+    再执行setenforce=0
+        getenforce
+8.使用阿里云官方镜像安装，添加阿里yum镜像源
+  vim /etc/yum.repos.d/kubernetes.repo
+  官网上k8s镜像yum配置文件添加进去
+  scp /etc/yum.repos.d/kubernetes.repo k8s-node01:/etc/yum.repos.d/kubernetes.repo
+  scp /etc/yum.repos.d/kubernetes.repo k8s-node02:/etc/yum.repos.d/kubernetes.repo
+9.指定版本安装 1.18.0
+  yum --disablerepo="*" --enablerepo="kubernetes" list available --showduplicates（查看所有可用版本）
+  yum install --enablerepo="kubernetes" kubelet-1.18.0-0.x86_64 kubeadm-1.18.0-0.x86_64 kubectl-1.18.0-0.x86_64
+10.设置开机启动
+  systemctl enable kubelet && systemctl start kubelet
+  systemctl enable docker && systemctl start docker
+  添加补全键配置
+  yum install bash-completion
+  进入vim .bashrc 添加使永久生效
+  source <(kubectl completion bash)
+  source <(kubeadm completion bash)
+11.master节点初始化
+   kubeadm init --apiserver-advertise-address=IP地址 --image-repository registry.aliyuncs.com/google_containers --kubernetes-version v1.18.0 --pod-network-cidr=10.244.0.0/16    指定阿里云地址初始化安装
+   mkdir -p $HOME/.kube
+   cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+   chown $(id -u):$(id -g) $HOME/.kube/comfig
+12.安装Flannel  
+  github上安装最新版本
+  vim kube-flannel.yml  将github上新版链接里的内容复制进去  （链接里面一个docker镜像需要下载 这个下载慢 提前下
+  docker pull quay.io/coreos/flannel:v0.13.1-rc2  看心情）
+  创建Pod网络
+   kubectl apply -f kube-flannel.yml
+13.node加入集群
+  kubeadm join IP地址 --token …….（token值24小时过期）
+  kubeadm token list(查看token值）
+  kubeadm token create(重新生成token值）
+  kubectl get nodes
+  kubectl get pod --all-namespaces

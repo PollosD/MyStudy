@@ -1,0 +1,31 @@
+MESOS   APACHE开源协议 分布式资源管理框架
+Docker Swarm 
+
+Kubernetes 特点：轻量级  开源 弹性伸缩   负载均衡（IPVS）
+
+pod 控制器 网络通讯模式
+构建k8s集群
+资源清单：   语法 编写pod 掌握pod生命周期
+pod控制器:   掌握各种控制器的特点以及使用定义方式
+服务发现：   service  掌握svc原理以及构建方式
+存储：       掌握多种存储类型的特点 根据环境选择合适的存储方案
+调度器：     调度器原理 根据要求把pod定义到指定节点运行
+安全：       集群的认证 鉴权 访问控制 原理及其流程
+HELM：      类似于linux的yum包管理  原理 模版自定义  部署常用插件
+
+
+组件说明
+ETCD:可信赖的分布式键值存储服务 为分布式集群存储一些关键数据，协助分布式集群的正常运转
+APIserver：所有服务访问的统一入口
+controllermanager：控制器 维持副本期望数目
+Scheduler:负责介绍任务，选择合适的节点进行分配任务
+kuberlet：直接跟容器引擎交互实现容器的生命周期管理
+kube-proxy:负责写入规则至iptables ipvs 实现服务映射访问
+
+插件说明
+COREDNS:为集群中的SVC创建一个域名IP的对应关系解析
+dashboard：为k8s集群提供B/S结构的访问体系
+ingress controller：可以实现七层代理 官方只能四层
+federation:跨集群中心的多k8s统一管理的功能
+prometheus:提供k8s集群的监控能力
+elk：提供k8s的集群日志统一分析接入平台
